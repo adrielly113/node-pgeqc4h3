@@ -87,7 +87,56 @@ async function deletarTabela() {
       console.error('Erro ao deletar:', error.message);
     }
   } else {
-    console.log('Ação cancelada.');
+    console.log('Ação cancelada.'); 
+    
+    // Função para consultar previsão do tempo
+async function consultarPrevisao() {
+  const cidade = prompt('Digite o nome da cidade: ');
+
+  try {
+    // Obter coordenadas
+    const geo = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+      params: {
+        q: cidade,
+        format: 'json',
+        limit: 1,
+      },
+    });
+
+    if (geo.data.length === 0) {
+      console.log('Cidade não encontrada.\n');
+      return;
+    }
+
+    const { lat, lon } = geo.data[0];
+
+    // Obter previsão do tempo
+    const tempo = await axios.get('https://api.open-meteo.com/v1/forecast', {
+      params: {
+        latitude: lat,
+        longitude: lon,
+        current_weather: true,
+      },
+    });
+
+    const clima = tempo.data.current_weather;
+    console.log(`\nPrevisão em ${cidade}:`);
+    console.log(`Temperatura: ${clima.temperature}°C`);
+    console.log(`Vento: ${clima.windspeed} km/h`);
+    console.log(`Data/Hora: ${clima.time}\n`);
+  } catch (err) {
+    console.error('Erro ao consultar API:', err.message);
+  }
+}
+
+// Início do sistema
+(async () => {
+  const logado = await login();
+  if (logado) {
+    await consultarPrevisao();
+  }
+  db.end();
+})();
   }
 }
 
